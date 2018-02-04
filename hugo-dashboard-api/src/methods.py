@@ -5,7 +5,7 @@ import toml
 from markdown import markdown
 
 
-project_location = '/mnt/e/Code/go/sites/deilanexe.github.com'
+project_location = '/mnt/e/Code/go/sites/testsite'
 
 
 def read_toml_md_file(input_toml_md_file):
@@ -49,16 +49,39 @@ def get_contents(section, page):
     if os.path.isfile(source_file):
         toml_content, md_content = split_file(source_file)
         config = toml.loads(toml_content)
-        return json.dumps(
-            dict(
+        return dict(
                 status=200, message="OK",
                 toml_fields=config, markdown_contents=md_content,
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                timestamp=get_now()
             )
-        )
     else:
-        return json.dumps(dict(
+        return dict(
             status=404, message="NOT FOUND",
             toml_fields={}, markdown_contents=[],
-            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        ))
+            timestamp=get_now()
+        )
+
+
+def get_now():
+    return datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")
+
+
+def set_contents(section, page, md_content, toml_content):
+    source_file = '{}/content/{}/{}.md'.format(project_location, section, page)
+    if os.path.isfile(source_file):
+        last_updated_date = get_now()
+        toml_content['last_updated'] = last_updated_date
+        with open(source_file, 'w') as rewrite:
+            rewrite.write('+++\n{}+++\n\n'.format(toml.dumps(toml_content)))
+            rewrite.write('\n\n'.join(md_content))
+            print('done')
+        return {
+                "status": 200, "message": "OK",
+                "timestamp": last_updated_date
+        }
+    else:
+        return dict(
+            status=404, message="NOT FOUND",
+            toml_fields={}, markdown_contents=[],
+            timestamp=get_now()
+        )
