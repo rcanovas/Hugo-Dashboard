@@ -3,6 +3,7 @@ import os.path
 from datetime import datetime
 import toml
 from markdown import markdown
+from pytz import timezone
 
 
 project_location = '/mnt/e/Code/go/sites/testsite'
@@ -63,7 +64,7 @@ def get_contents(section, page):
 
 
 def get_now():
-    return datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")
+    return datetime.now(timezone('Australia/Melbourne')).strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
 def set_contents(section, page, md_content, toml_content):
@@ -83,5 +84,25 @@ def set_contents(section, page, md_content, toml_content):
         return dict(
             status=404, message="NOT FOUND",
             toml_fields={}, markdown_contents=[],
+            timestamp=get_now()
+        )
+
+
+def new_content(section, page, md_content, toml_content):
+    source_file = '{}/content/{}/{}.md'.format(project_location, section, page)
+    if not os.path.isfile(source_file):
+        last_updated_date = get_now()
+        toml_content['date'] = last_updated_date
+        with open(source_file, 'w+') as rewrite:
+            rewrite.write('+++\n{}+++\n\n'.format(toml.dumps(toml_content)))
+            rewrite.write('\n\n'.join(md_content))
+            print('done')
+        return {
+                "status": 200, "message": "OK",
+                "timestamp": last_updated_date
+        }
+    else:
+        return dict(
+            status=500, message="FILE EXISTS",
             timestamp=get_now()
         )

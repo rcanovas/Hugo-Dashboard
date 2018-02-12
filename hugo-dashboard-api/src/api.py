@@ -25,5 +25,14 @@ def put_content(section, page):
     return jsonify(m.set_contents(section, page, md_content, toml_content))
 
 
+@app.route('/content/<section>/<page>', methods=['POST'])
+def post_content(section, page):
+    payload = request.get_json()
+    print(json.dumps(payload))
+    md_content = payload.get('markdown_contents')
+    toml_content = payload.get('toml_fields')
+    return jsonify(m.new_content(section, page, md_content, toml_content))
+
+
 if __name__ == '__main__':
     app.run()
