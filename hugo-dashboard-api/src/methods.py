@@ -47,19 +47,20 @@ def split_file(input_file):
 
 def get_contents(section, page):
     source_file = '{}/content/{}/{}.md'.format(project_location, section, page)
+    last_updated_date = get_now()
     if os.path.isfile(source_file):
         toml_content, md_content = split_file(source_file)
         config = toml.loads(toml_content)
         return dict(
                 status=200, message="OK",
                 toml_fields=config, markdown_contents=md_content,
-                timestamp=get_now()
+                timestamp=last_updated_date
             )
     else:
         return dict(
             status=404, message="NOT FOUND",
             toml_fields={}, markdown_contents=[],
-            timestamp=get_now()
+            timestamp=last_updated_date
         )
 
 
@@ -69,8 +70,8 @@ def get_now():
 
 def set_contents(section, page, md_content, toml_content):
     source_file = '{}/content/{}/{}.md'.format(project_location, section, page)
+    last_updated_date = get_now()
     if os.path.isfile(source_file):
-        last_updated_date = get_now()
         toml_content['last_updated'] = last_updated_date
         with open(source_file, 'w') as rewrite:
             rewrite.write('+++\n{}+++\n\n'.format(toml.dumps(toml_content)))
@@ -82,16 +83,16 @@ def set_contents(section, page, md_content, toml_content):
         }
     else:
         return dict(
-            status=404, message="NOT FOUND",
+            status=404, message="FILE NOT FOUND",
             toml_fields={}, markdown_contents=[],
-            timestamp=get_now()
+            timestamp=last_updated_date
         )
 
 
 def new_content(section, page, md_content, toml_content):
     source_file = '{}/content/{}/{}.md'.format(project_location, section, page)
+    last_updated_date = get_now()
     if not os.path.isfile(source_file):
-        last_updated_date = get_now()
         toml_content['date'] = last_updated_date
         with open(source_file, 'w+') as rewrite:
             rewrite.write('+++\n{}+++\n\n'.format(toml.dumps(toml_content)))
@@ -103,6 +104,28 @@ def new_content(section, page, md_content, toml_content):
         }
     else:
         return dict(
-            status=500, message="FILE EXISTS",
-            timestamp=get_now()
+            status=400, message="FILE EXISTS",
+            timestamp=last_updated_date
+        )
+
+
+def remove_content(section, page):
+    source_file = '{}/content/{}/{}.md'.format(project_location, section, page)
+    last_updated_date = get_now()
+    if os.path.isfile(source_file):
+        try:
+            os.remove(source_file)
+            return {
+                    "status": 200, "message": "OK",
+                    "timestamp": last_updated_date
+            }
+        except Exception as e:
+            return {
+                    "status": 500, "message": "UNEXPECTED ERROR",
+                    "timestamp": last_updated_date
+            }
+    else:
+        return dict(
+            status=404, message="FILE NOT FOUND",
+            timestamp=last_updated_date
         )
