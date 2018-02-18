@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import methods as m
 import json
 
@@ -12,7 +12,8 @@ def index():
 
 @app.route('/content/<section>/<page>', methods=['GET'])
 def get_content(section, page):
-    return jsonify(m.get_contents(section, page))
+    response = m.get_contents(section, page)
+    return make_response(jsonify(response), response['status'])
 
 
 @app.route('/content/<section>/<page>', methods=['PUT'])
@@ -22,7 +23,8 @@ def put_content(section, page):
     print(json.dumps(payload))
     md_content = payload.get('markdown_contents')
     toml_content = payload.get('toml_fields')
-    return jsonify(m.set_contents(section, page, md_content, toml_content))
+    response = m.set_contents(section, page, md_content, toml_content)
+    return make_response(jsonify(response), response['status'])
 
 
 @app.route('/content/<section>/<page>', methods=['POST'])
@@ -31,7 +33,14 @@ def post_content(section, page):
     print(json.dumps(payload))
     md_content = payload.get('markdown_contents')
     toml_content = payload.get('toml_fields')
-    return jsonify(m.new_content(section, page, md_content, toml_content))
+    response = m.new_content(section, page, md_content, toml_content)
+    return make_response(jsonify(response), response['status'])
+
+
+@app.route('/content/<section>/<page>', methods=['DELETE'])
+def delete_content(section, page):
+    response = m.remove_content(section, page)
+    return make_response(jsonify(response), response['status'])
 
 
 if __name__ == '__main__':
